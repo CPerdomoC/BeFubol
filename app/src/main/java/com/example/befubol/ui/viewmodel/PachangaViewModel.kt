@@ -27,16 +27,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/**
- * ViewModel principal que gestiona todo el estado de la aplicación Pachanga Marcador.
- * Implementa arquitectura MVVM exponiendo el estado mediante StateFlow y persistencia completa
- * tanto de equipos como del historial de partidos con SharedPreferences.
- */
 class PachangaViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val sharedPreferences = application.getSharedPreferences("pachanga_prefs", Context.MODE_PRIVATE)
+    private val sharedPreferences = application.getSharedPreferences("befubol_prefs", Context.MODE_PRIVATE)
 
-    // Paleta de colores predefinida con nombres amigables para el selector
     val opcionesColoresDisponibles = listOf(
         OpcionColor("Rojo Furia", 0xFFEF4444),
         OpcionColor("Azul Real", 0xFF2563EB),
@@ -50,31 +44,24 @@ class PachangaViewModel(application: Application) : AndroidViewModel(application
         OpcionColor("Negro Noche", 0xFF1E293B)
     )
 
-    // Lista de equipos registrados en la app (cargados desde SharedPreferences o iniciales)
     private val _equipos = MutableStateFlow<List<Equipo>>(cargarEquiposDeAlmacenamiento())
     val equipos: StateFlow<List<Equipo>> = _equipos.asStateFlow()
 
-    // Partido actual que se está jugando o configurando
     private val _partidoActual = MutableStateFlow<Partido?>(null)
     val partidoActual: StateFlow<Partido?> = _partidoActual.asStateFlow()
 
-    // Estado del cronómetro en segundos
     private val _tiempoRestanteSegundos = MutableStateFlow(0)
     val tiempoRestanteSegundos: StateFlow<Int> = _tiempoRestanteSegundos.asStateFlow()
 
-    // Indica si el cronómetro está en pausa
     private val _cronometroEnPausa = MutableStateFlow(true)
     val cronometroEnPausa: StateFlow<Boolean> = _cronometroEnPausa.asStateFlow()
 
-    // Evento de gol reciente para activar el cartel de celebración de ¡GOOOOL!
     private val _ultimoGolCelebracion = MutableStateFlow<Gol?>(null)
     val ultimoGolCelebracion: StateFlow<Gol?> = _ultimoGolCelebracion.asStateFlow()
 
-    // Historial de partidos finalizados persistido entre sesiones y días
     private val _historialPartidos = MutableStateFlow<List<Partido>>(cargarHistorialDeAlmacenamiento())
     val historialPartidos: StateFlow<List<Partido>> = _historialPartidos.asStateFlow()
 
-    // Cálculo automático del "Pichichi" (Máximo Goleador acumulado de la sesión o histórico)
     val maximoGoleador: StateFlow<GoleadorEstadistica?> = _historialPartidos.map { partidos ->
         val todosLosGoles = partidos.flatMap { it.goles }
         if (todosLosGoles.isEmpty()) {
@@ -90,19 +77,10 @@ class PachangaViewModel(application: Application) : AndroidViewModel(application
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    // Contador para nombres por defecto: "Partido 1", "Partido 2", etc.
     private var contadorPartidos = _historialPartidos.value.size + 1
 
-    // Job de corrutina para el reloj en cuenta atrás
     private var jobCronometro: Job? = null
 
-    // ==========================================
-    // SECCIÓN 1: GESTIÓN DE EQUIPOS Y JUGADORES
-    // ==========================================
-
-    /**
-     * Guarda o actualiza un equipo y persiste la lista.
-     */
     fun guardarEquipo(equipo: Equipo) {
         _equipos.update { lista ->
             val index = lista.indexOfFirst { it.id == equipo.id }
@@ -116,9 +94,6 @@ class PachangaViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    /**
-     * Elimina un equipo y persiste la lista.
-     */
     fun eliminarEquipo(equipoId: String) {
         _equipos.update { lista ->
             val nuevaLista = lista.filter { it.id != equipoId }
@@ -127,11 +102,6 @@ class PachangaViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    /**
-     * Randomizador de equipos configurable:
-     * Baraja la lista de nombres introducidos y los reparte equitativamente
-     * en N equipos (por ejemplo 2, 3 o 4 equipos para pachangas tipo triangular).
-     */
     fun sortearEquipos(
         nombresJugadores: List<String>,
         numeroEquipos: Int = 2
@@ -146,12 +116,12 @@ class PachangaViewModel(application: Application) : AndroidViewModel(application
             "Equipo Verde", "Equipo Amarillo", "Equipo Morado"
         )
         val coloresDefecto = listOf(
-            0xFFE2E8F0, // Blanco Plata
-            0xFF2563EB, // Azul Real
-            0xFFEF4444, // Rojo Furia
-            0xFF10B981, // Verde Césped
-            0xFFF59E0B, // Amarillo Oro
-            0xFF7C3AED  // Morado Rayo
+            0xFFE2E8F0,
+            0xFF2563EB,
+            0xFFEF4444,
+            0xFF10B981,
+            0xFFF59E0B,
+            0xFF7C3AED
         )
 
         val listasJugadores = List(numEquiposAjustado) { mutableListOf<Jugador>() }
@@ -172,10 +142,6 @@ class PachangaViewModel(application: Application) : AndroidViewModel(application
             guardarEquipo(nuevoEquipo)
         }
     }
-
-    // ==========================================
-    // SECCIÓN 2: PREPARAR Y COMENZAR PARTIDO
-    // ==========================================
 
     fun iniciarPartido(
         equipo1: Equipo,
@@ -207,10 +173,6 @@ class PachangaViewModel(application: Application) : AndroidViewModel(application
 
         detenerCronometro()
     }
-
-    // ==========================================
-    // SECCIÓN 3: CONTROL DE TIEMPO Y CRONÓMETRO
-    // ==========================================
 
     fun alternarPausaCronometro() {
         if (_cronometroEnPausa.value) {
@@ -246,10 +208,6 @@ class PachangaViewModel(application: Application) : AndroidViewModel(application
         jobCronometro = null
     }
 
-    // ==========================================
-    // SECCIÓN 4: ANOTACIÓN DE GOLES
-    // ==========================================
-
     fun anotarGol(equipoId: String, jugador: Jugador) {
         val partido = _partidoActual.value ?: return
         val duracionTotalSegundos = partido.duracionMinutos * 60
@@ -281,10 +239,6 @@ class PachangaViewModel(application: Application) : AndroidViewModel(application
         }
         _ultimoGolCelebracion.value = null
     }
-
-    // ==========================================
-    // SECCIÓN 5: FINALIZACIÓN Y PENALTIS
-    // ==========================================
 
     fun finalizarTiempoReglamentario() {
         detenerCronometro()
@@ -385,10 +339,6 @@ class PachangaViewModel(application: Application) : AndroidViewModel(application
         _ultimoGolCelebracion.value = null
     }
 
-    // ==========================================
-    // SECCIÓN 6: PERSISTENCIA LOCAL (SharedPreferences)
-    // ==========================================
-
     private fun guardarEquiposEnAlmacenamiento(lista: List<Equipo>) {
         try {
             val jsonArray = JSONArray()
@@ -412,7 +362,6 @@ class PachangaViewModel(application: Application) : AndroidViewModel(application
             }
             sharedPreferences.edit().putString("equipos_guardados", jsonArray.toString()).apply()
         } catch (_: Exception) {
-            // Ignorado en caso de error
         }
     }
 
@@ -508,7 +457,6 @@ class PachangaViewModel(application: Application) : AndroidViewModel(application
             }
             sharedPreferences.edit().putString("historial_partidos_guardado", jsonArray.toString()).apply()
         } catch (_: Exception) {
-            // Ignorado en caso de error
         }
     }
 
@@ -587,7 +535,7 @@ class PachangaViewModel(application: Application) : AndroidViewModel(application
         return listOf(
             Equipo(
                 nombre = "Los Galácticos",
-                colorHex = 0xFF2563EB, // Azul Real
+                colorHex = 0xFF2563EB,
                 jugadores = listOf(
                     Jugador(nombre = "Carlos (P)", esTitular = true),
                     Jugador(nombre = "Marcos", esTitular = true),
@@ -600,7 +548,7 @@ class PachangaViewModel(application: Application) : AndroidViewModel(application
             ),
             Equipo(
                 nombre = "Furia Roja",
-                colorHex = 0xFFEF4444, // Rojo Furia
+                colorHex = 0xFFEF4444,
                 jugadores = listOf(
                     Jugador(nombre = "Rubén (P)", esTitular = true),
                     Jugador(nombre = "Javi", esTitular = true),

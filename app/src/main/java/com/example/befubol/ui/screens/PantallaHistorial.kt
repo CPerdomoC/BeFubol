@@ -23,10 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.example.befubol.ui.theme.colorParaFondoOscuro
 import com.example.befubol.ui.viewmodel.PachangaViewModel
 
-/**
- * Pantalla que muestra el historial de partidos finalizados durante la sesión
- * e incluye el cálculo del "Pichichi" (máximo goleador acumulado).
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaHistorial(
@@ -55,7 +52,7 @@ fun PantallaHistorial(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Tarjeta del Pichichi si hay goles en la sesión
+
             val goleador = pichichi
             if (goleador != null) {
                 item {
@@ -161,7 +158,7 @@ fun PantallaHistorial(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // Marcador
+
                             val colorEq1 = Color(partido.equipo1.colorHex)
                             val colorEq2 = Color(partido.equipo2.colorHex)
                             Row(

@@ -21,10 +21,7 @@ import com.example.befubol.data.model.Equipo
 import com.example.befubol.ui.theme.colorParaFondoOscuro
 import com.example.befubol.ui.viewmodel.PachangaViewModel
 
-/**
- * Pantalla para configurar el partido antes de comenzarlo:
- * Selección de equipos rivales, nombre y duración en minutos.
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaPrepararPartido(
@@ -66,7 +63,7 @@ fun PantallaPrepararPartido(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Nombre opcional del partido
+
             OutlinedTextField(
                 value = nombrePartido,
                 onValueChange = { nombrePartido = it },
@@ -76,11 +73,11 @@ fun PantallaPrepararPartido(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Selección de Equipos
+
             Text("Selecciona los 2 equipos:", style = MaterialTheme.typography.titleMedium)
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                // Selector Equipo 1
+
                 Box(modifier = Modifier.weight(1f)) {
                     SelectorEquipoDesplegable(
                         titulo = "Equipo Local",
@@ -90,7 +87,7 @@ fun PantallaPrepararPartido(
                     )
                 }
 
-                // Selector Equipo 2
+
                 Box(modifier = Modifier.weight(1f)) {
                     SelectorEquipoDesplegable(
                         titulo = "Equipo Visitante",
@@ -109,7 +106,7 @@ fun PantallaPrepararPartido(
                 )
             }
 
-            // Duración del partido
+
             Text("Duración del partido:", style = MaterialTheme.typography.titleMedium)
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
@@ -156,7 +153,7 @@ fun PantallaPrepararPartido(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Botón Comenzar
+
             Button(
                 onClick = {
                     val e1 = equipo1Seleccionado ?: return@Button

@@ -35,10 +35,7 @@ import com.example.befubol.ui.theme.colorParaFondoOscuro
 import com.example.befubol.ui.theme.colorTextoContraste
 import com.example.befubol.ui.viewmodel.PachangaViewModel
 
-/**
- * Pantalla principal para gestionar los equipos y jugadores.
- * Permite crear, ver, editar, eliminar y sortear equipos aleatoriamente en N grupos.
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaEquipos(
@@ -174,7 +171,7 @@ fun PantallaEquipos(
             }
         }
 
-        // Diálogo para crear o editar equipo manual
+
         if (mostrarDialogoCreacion) {
             DialogoFormularioEquipo(
                 equipoExistente = equipoParaEditar,
@@ -187,7 +184,7 @@ fun PantallaEquipos(
             )
         }
 
-        // Diálogo del Randomizador configurable (2, 3 o más equipos)
+
         if (mostrarDialogoSorteo) {
             DialogoSortearEquipos(
                 onSortear = { listaNombres, numEquipos ->
@@ -473,9 +470,7 @@ fun DialogoFormularioEquipo(
     )
 }
 
-/**
- * Diálogo para introducir la lista de amigos y sortearlos al azar en 2, 3 o más equipos equilibrados.
- */
+
 @Composable
 fun DialogoSortearEquipos(
     onSortear: (List<String>, Int) -> Unit,

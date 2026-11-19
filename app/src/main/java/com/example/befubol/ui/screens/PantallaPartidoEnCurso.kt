@@ -39,10 +39,7 @@ import com.example.befubol.ui.theme.esColorClaro
 import com.example.befubol.ui.viewmodel.PachangaViewModel
 import java.util.Locale
 
-/**
- * Pantalla principal del partido en juego:
- * Cronómetro digital, marcador simétrico de estadio, banner festivo de ¡GOOOL! con contraste inteligente.
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaPartidoEnCurso(
@@ -108,7 +105,7 @@ fun PantallaPartidoEnCurso(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Tarjeta de Cronómetro Digital
+
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
@@ -151,7 +148,7 @@ fun PantallaPartidoEnCurso(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Marcador visual simétrico con control para nombres largos y contraste
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -181,7 +178,7 @@ fun PantallaPartidoEnCurso(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Botón Deshacer Gol
+
                 if (p.goles.isNotEmpty()) {
                     OutlinedButton(
                         onClick = { viewModel.deshacerUltimoGol() },
@@ -200,7 +197,7 @@ fun PantallaPartidoEnCurso(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Lista de goles anotados
+
                 Text(
                     text = "Goles anotados (${p.goles.size})",
                     style = MaterialTheme.typography.titleMedium,
@@ -271,7 +268,7 @@ fun PantallaPartidoEnCurso(
                 }
             }
 
-            // Banner animado de ¡¡GOOOOL!! con contraste inteligente
+
             AnimatedVisibility(
                 visible = golCelebracion != null,
                 enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
@@ -326,7 +323,7 @@ fun PantallaPartidoEnCurso(
             }
         }
 
-        // Diálogo para elegir goleador
+
         val equipoAnotando = equipoParaAnotar
         if (equipoAnotando != null) {
             DialogoSeleccionarGoleador(
@@ -339,7 +336,7 @@ fun PantallaPartidoEnCurso(
             )
         }
 
-        // Diálogo de confirmación para terminar partido manualmente
+
         if (mostrarConfirmacionTerminar) {
             AlertDialog(
                 onDismissRequest = { mostrarConfirmacionTerminar = false },
@@ -366,10 +363,7 @@ fun PantallaPartidoEnCurso(
     }
 }
 
-/**
- * Columna de equipo en el marcador:
- * Aplica lógica de luminancia para garantizar que tanto equipos blancos como negros sean 100% legibles.
- */
+
 @Composable
 fun ColumnaEquipoMarcador(
     equipo: Equipo,
@@ -405,7 +399,7 @@ fun ColumnaEquipoMarcador(
             )
             Spacer(modifier = Modifier.height(6.dp))
 
-            // Nombre con altura mínima y elipsis controlada
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -425,7 +419,7 @@ fun ColumnaEquipoMarcador(
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // Panel de puntuación estilo LED con contraste inteligente
+
             Surface(
                 color = if (colorOriginal.esColorClaro()) Color(0xFF232A36) else colorOriginal.copy(alpha = 0.18f),
                 shape = RoundedCornerShape(10.dp),
@@ -447,7 +441,7 @@ fun ColumnaEquipoMarcador(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Botón + GOL con color de texto dinámico (negro para fondo blanco, blanco para fondos oscuros)
+
             Button(
                 onClick = onAnotarGol,
                 colors = ButtonDefaults.buttonColors(

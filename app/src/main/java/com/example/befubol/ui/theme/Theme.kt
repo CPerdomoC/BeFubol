@@ -5,9 +5,6 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-/**
- * Esquema de color oscuro predeterminado con temática de marcador deportivo de fútbol.
- */
 private val DarkSportsColorScheme = darkColorScheme(
     primary = VerdeCespedNeon,
     onPrimary = Color(0xFF003816),

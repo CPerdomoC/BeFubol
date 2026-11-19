@@ -23,11 +23,7 @@ import com.example.befubol.data.model.Equipo
 import com.example.befubol.ui.theme.colorParaFondoOscuro
 import com.example.befubol.ui.viewmodel.PachangaViewModel
 
-/**
- * Pantalla para la tanda de penaltis:
- * 3 penaltis iniciales por equipo, finalización anticipada por ventaja matemática y muerte súbita.
- * Aplica lógica de luminancia para colores de equipos.
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaPenaltis(
@@ -56,7 +52,7 @@ fun PantallaPenaltis(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Título y Marcador de Penaltis
+
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (estadoPenaltis.esMuerteSubita && !estadoPenaltis.tandaTerminada) {
                     SuggestionChip(
@@ -71,7 +67,7 @@ fun PantallaPenaltis(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Marcador grande de penaltis
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
@@ -95,7 +91,7 @@ fun PantallaPenaltis(
                 }
             }
 
-            // Sección central: Turno actual o Ganador
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -153,7 +149,7 @@ fun PantallaPenaltis(
                 }
             }
 
-            // Botones de acción: "GOL" o "FALLO" (sin emojis redundantes), o "Ver Resumen" si terminó
+
             if (!estadoPenaltis.tandaTerminada) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -174,7 +170,7 @@ fun PantallaPenaltis(
 
                     Button(
                         onClick = { viewModel.registrarLanzamientoPenalti(marcado = true) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)), // Verde éxito
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
                         modifier = Modifier
                             .weight(1f)
                             .height(60.dp),
@@ -240,7 +236,7 @@ fun ColumnaEquipoPenaltis(
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Indicadores visuales circulares elegantes de lanzamientos
+    
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             val totalSlots = maxOf(3, lanzamientos.size)
             for (i in 0 until totalSlots) {

@@ -1,8 +1,5 @@
 package com.example.befubol.ui.navigation
 
-/**
- * Rutas para la navegación dentro de la app con Navigation Compose.
- */
 sealed class Destino(val ruta: String) {
     object Equipos : Destino("equipos")
     object PrepararPartido : Destino("preparar_partido")

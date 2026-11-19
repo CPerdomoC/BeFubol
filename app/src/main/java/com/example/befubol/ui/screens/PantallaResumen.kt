@@ -28,10 +28,7 @@ import com.example.befubol.ui.theme.colorTextoContraste
 import com.example.befubol.ui.theme.esColorClaro
 import com.example.befubol.ui.viewmodel.PachangaViewModel
 
-/**
- * Pantalla de resumen final del partido:
- * Muestra el resultado definitivo, goleadores por minuto, penaltis si los hubo y el ganador.
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaResumen(
@@ -111,7 +108,7 @@ fun PantallaResumen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Cabecera: Nombre y fecha
+
             item {
                 Card(
                     modifier = Modifier
@@ -143,7 +140,7 @@ fun PantallaResumen(
                 }
             }
 
-            // Resultado final
+
             item {
                 Card(
                     modifier = Modifier
@@ -168,7 +165,7 @@ fun PantallaResumen(
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Equipo 1
+
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.weight(1f)
@@ -203,7 +200,7 @@ fun PantallaResumen(
                                 modifier = Modifier.padding(horizontal = 8.dp)
                             )
 
-                            // Equipo 2
+
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.weight(1f)
@@ -232,7 +229,7 @@ fun PantallaResumen(
                             }
                         }
 
-                        // Penaltis si los hubo
+
                         val pen = p.estadoPenaltis
                         if (pen != null) {
                             Spacer(modifier = Modifier.height(14.dp))
@@ -253,7 +250,7 @@ fun PantallaResumen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Ganador
+
                         if (equipoGanador != null) {
                             val colorGanador = Color(equipoGanador.colorHex)
                             val colorGanadorVisible = colorGanador.colorParaFondoOscuro()
@@ -278,7 +275,7 @@ fun PantallaResumen(
                 }
             }
 
-            // Goleadores
+
             item {
                 Text(
                     text = "Goleadores del partido",
