@@ -1,0 +1,180 @@
+================================================================================
+                    DOCUMENTACIÓN TÉCNICA Y EXPLICACIÓN DE CODEBASE
+                                  PROYECTO: BEFUBOL
+================================================================================
+
+1. ARQUITECTURA GENERAL Y CÓMO FUNCIONA EL PROYECTO
+--------------------------------------------------------------------------------
+BeFubol es una aplicación Android nativa desarrollada íntegramente en Kotlin y
+Jetpack Compose. Su objetivo es gestionar equipos de fútbol, configurar partidos,
+llevar el marcador en tiempo real con un cronómetro digital, gestionar tandas de
+penaltis con muerte súbita, guardar el historial de partidos y calcular automáticamente
+el máximo goleador (Pichichi).
+
+La aplicación sigue el patrón de arquitectura **MVVM (Model - View - ViewModel)**:
+- **Capa de Modelos (`data/model/Modelos.kt`)**: Define las entidades de datos inmutables.
+- **Capa ViewModel (`ui/viewmodel/PachangaViewModel.kt`)**: Contiene la lógica de negocio,
+  el control del tiempo mediante corrutinas, la gestión del estado reactivo y la persistencia local.
+- **Capa de Interfaz (`ui/screens/` y `ui/theme/`)**: Construida con Jetpack Compose,
+  reacciona automáticamente a las actualizaciones del estado expuesto por el ViewModel.
+- **Navegación (`ui/navigation/` y `MainActivity.kt`)**: Dirige el flujo entre pantallas
+  compartiendo una única instancia del ViewModel.
+
+--------------------------------------------------------------------------------
+2. MODELOS DE DATOS Y DECISIONES TÉCNICAS (`Modelos.kt`)
+--------------------------------------------------------------------------------
+En Kotlin, el uso de `data class` proporciona automáticamente métodos como `copy()`,
+`equals()`, `hashCode()` y `toString()`.
+
+- `Jugador`:
+  - `id`: Generado con `UUID.randomUUID().toString()`.
+    *¿Por qué?* Asegura que cada jugador tenga un identificador único universal sin
+    colisiones, independientemente de si dos jugadores comparten el mismo nombre.
+  - `nombre`: Nombre del jugador.
+  - `esTitular`: Booleano para diferenciar titulares de suplentes.
+
+- `Equipo`:
+  - `id`, `nombre`, `colorHex` (formato ARGB) y lista de `jugadores`.
+  - `titulares` y `suplentes`: Propiedades calculadas en tiempo de ejecución.
+    *¿Por qué?* Evita duplicidad de estado y garantiza que filtrar titulares o suplentes
+    siempre refleje la lista principal.
+  - `esValido()`: Valida que el nombre no esté vacío, que tenga entre 1 y 11 titulares
+    y como máximo 5 suplentes.
+
+- `Gol`:
+  - Registra `jugadorId`, `jugadorNombre`, `equipoId` y el `minuto` exacto del partido.
+
+- `EstadoPenaltis`:
+  - `lanzamientosEquipo1` y `lanzamientosEquipo2`: Listas de Boolean (`true` = Gol, `false` = Fallo).
+  - `turnoEquipo1`, `tandaTerminada`, `ganadorEquipoId` y `esMuerteSubita`.
+  - Contadores `golesEquipo1` y `golesEquipo2` calculados dinámicamente con `count { it }`.
+
+- `Partido`:
+  - Agrupa la información completa del encuentro.
+  - Propiedades calculadas `golesEquipo1` y `golesEquipo2` filtrando la lista global de goles por `equipoId`.
+
+- `GoleadorEstadistica`:
+  - Estructura ligera para representar al máximo goleador ("Pichichi") con su nombre y total de goles.
+
+--------------------------------------------------------------------------------
+3. LÓGICA DE NEGOCIO Y ESTADO REACTIVO (`PachangaViewModel.kt`)
+--------------------------------------------------------------------------------
+El `PachangaViewModel` extiende de `AndroidViewModel` para tener acceso al contexto
+de la aplicación (`Application`) y poder operar con `SharedPreferences`.
+
+Decisiones clave de arquitectura en el ViewModel:
+- **`StateFlow` e inmutabilidad**:
+  Se utilizan pares de variables `_estado (MutableStateFlow)` privada y `estado (StateFlow)`
+  pública asStateFlow(). Esto impide que la UI modifique el estado directamente,
+  forzando a que todas las mutaciones pasen por las funciones del ViewModel (Flujo de Datos Unidireccional).
+
+- **Gestión de Equipos y Sorteo Aleatorio (`sortearEquipos`)**:
+  - `guardarEquipo()` / `eliminarEquipo()`: Usan `_equipos.update { ... }` para garantizar
+    mutaciones atómicas de la lista y desencadenan la persistencia.
+  - `sortearEquipos()`: Recibe una lista de nombres y un número de equipos N (2 a 6).
+    Usa `.shuffled()` para barajar los nombres al azar, repartiéndolos cíclicamente
+    entre los equipos y asignando roles (titular/suplente), nombres y colores automáticos.
+
+- **Cronómetro Digital y Corrutinas (`jobCronometro`)**:
+  - *¿Por qué un `Job` de corrutina?* Permite iniciar un temporizador cancelable en el
+    ámbito de la ViewModel (`viewModelScope`). Si la pantalla se destruye o se pausa el partido,
+    el `Job` se cancela de forma segura evitando fugas de memoria (*memory leaks*).
+  - `reanudarCronometro()` ejecuta un bucle `while` con `delay(1000L)` que descuenta un segundo
+    en cada iteración sin bloquear el hilo principal de renderizado de la UI.
+
+- **Anotación de Goles (`anotarGol`)**:
+  - Calcula automáticamente el minuto del gol basándose en el tiempo restante:
+    `minutoActual = maxOf(1, (segundosJugados / 60) + 1)`.
+  - Activa el evento `ultimoGolCelebracion` para mostrar el banner animado "¡GOOOOL!".
+  - `deshacerUltimoGol()`: Elimina el último elemento de la lista de goles con `.dropLast(1)`.
+
+- **Lógica de Tanda de Penaltis (`registrarLanzamientoPenalti`)**:
+  - Maneja la regla oficial: 3 penaltis iniciales por equipo.
+  - **Ventaja matemática**: Comprueba en cada tiro si los goles acumulados de un equipo superan
+    los goles del rival más los tiros que le quedan por tirar. Si es matemáticamente inalcanzable,
+    la tanda finaliza de forma anticipada.
+  - **Muerte Súbita**: Si tras 3 tiros empatan, activa `esMuerteSubita = true`. En muerte súbita,
+    la tanda finaliza en la ronda donde uno marque y el otro falle.
+
+- **Máximo Goleador acumulado (`maximoGoleador`)**:
+  - `val maximoGoleador: StateFlow<GoleadorEstadistica?>` utiliza `.map` sobre la lista de partidos
+    del historial, aplanea todos los goles (`flatMap`), agrupa por jugador (`groupingBy { ... }.eachCount()`)
+    y busca el máximo con `maxByOrNull`. Se convierte en StateFlow reactivo con `stateIn`.
+
+- **Persistencia Local (`SharedPreferences` con JSON)**:
+  - Guarda y recupera los datos en formato `JSONArray` / `JSONObject` nativo.
+  - *¿Por qué SharedPreferences con JSON en lugar de Room?* Para una aplicación ligera de marcadores,
+    JSON en SharedPreferences ofrece una solución de cero configuración, extremadamente rápida de
+    leer y escribir, sin la complejidad ni el sobrepeso de esquemas SQL.
+
+--------------------------------------------------------------------------------
+4. SISTEMA DE NAVEGACIÓN Y MULTIPANTALLA (`DestinosNavegacion.kt` y `MainActivity.kt`)
+--------------------------------------------------------------------------------
+- `sealed class Destino(val ruta: String)`:
+  *¿Por qué sealed class?* Define un conjunto cerrado de rutas válidas ("equipos", "preparar_partido", etc.).
+  Evita errores tipográficos en strings y permite autocompletado en el IDE.
+
+- `MainActivity.kt`:
+  - Se instancia una sola vez el `PachangaViewModel` compartido usando `viewModel()`.
+  - Se pasa la misma instancia del ViewModel a todos los composables del `NavHost`.
+    *¿Por qué?* Permite que los datos del partido que se configura en `PantallaPrepararPartido`
+    estén inmediatamente disponibles en `PantallaPartidoEnCurso`, `PantallaPenaltis` y `PantallaResumen`.
+  - Se utiliza `popUpTo` en la navegación para limpiar la pila de pantallas (backstack) cuando un
+    partido termina, evitando que pulsar el botón atrás en el dispositivo vuelva a un partido finalizado.
+
+--------------------------------------------------------------------------------
+5. COMPONENTES VISUALES Y DISEÑO DE UI EN JETPACK COMPOSE
+--------------------------------------------------------------------------------
+- **`PantallaEquipos.kt`**:
+  - Utiliza `FloatingActionButton` combinado con `DropdownMenu` para desplegar las opciones
+    "➕ Crear equipo" y "🎲 Sortear equipos".
+    *¿Por qué?* Reduce la carga visual en la pantalla y agrupa las acciones de adición en un solo botón +.
+  - Usa `LazyColumn` para la lista de equipos y `LazyVerticalGrid` para la selección de colores.
+    *¿Por qué Lazy components?* Renderizan únicamente los elementos visibles en pantalla, garantizando 60 FPS.
+
+- **`PantallaPrepararPartido.kt`**:
+  - Utiliza menús desplegables (`DropdownMenuItem`), chips de duración (`FilterChip`) y campo de texto
+    personalizado para seleccionar el tiempo.
+
+- **`PantallaPartidoEnCurso.kt`**:
+  - Marcador de estilo LED digital con tipografía monoespaciada (`FontFamily.Monospace`).
+  - Utiliza `AnimatedVisibility` con efectos de deslizamiento (`slideInVertically`) y desvanecido (`fadeIn`)
+    para mostrar el banner emergente de celebración de gol.
+  - `LaunchedEffect`: Escucha los cambios en `partido.terminado` o `partido.estadoPenaltis` para
+    navegar automáticamente a la pantalla correspondiente cuando el tiempo concluye.
+
+- **`PantallaPenaltis.kt`**:
+  - Presenta indicadores circulares visuales de cada lanzamiento (verde para marcado, rojo para fallado).
+  - Muestra un aviso destacado (`SuggestionChip`) cuando se entra en Muerte Súbita.
+
+- **`PantallaResumen.kt` y `PantallaHistorial.kt`**:
+  - Muestran el desglose detallado de goles con tarjetas formateadas y la tarjeta dorada del "Pichichi de la Jornada".
+
+--------------------------------------------------------------------------------
+6. UTILIDADES DE COLOR Y CONTRASTE INTELIGENTE (`Color.kt`)
+--------------------------------------------------------------------------------
+Para garantizar que cualquier equipo creado por el usuario (sin importar el color que elija)
+sea perfectamente legible en la interfaz:
+
+- `Color.esColorClaro()`:
+  - Implementa la fórmula oficial de la W3C para luminancia perceptiva relativa:
+    `luminancia = 0.299 * R + 0.587 * G + 0.114 * B`
+  - Retorna `true` si la luminancia es mayor a 0.5 (fondos claros como amarillo, blanco, cian).
+
+- `Color.colorTextoContraste()`:
+  - Retorna texto oscuro (`#0E1117`) sobre fondos claros, y texto blanco (`#FFFFFF`) sobre fondos oscuros.
+    *¿Por qué?* Evita el problema común donde el texto blanco sobre un equipo de color amarillo o blanco resulta ilegible.
+
+- `Color.colorParaFondoOscuro()`:
+  - Detecta si un color es excesivamente oscuro (como negro o azul noche) y lo eleva a un tono nítido (`#E2E8F0`)
+    cuando debe dibujarse como texto o marcador sobre el tema oscuro de la app.
+
+--------------------------------------------------------------------------------
+7. TEMA DE LA APLICACIÓN Y SINCRONIZACIÓN DE ENCABEZADO (`themes.xml` y `AndroidManifest.xml`)
+--------------------------------------------------------------------------------
+- En `AndroidManifest.xml` se configura `android:theme="@style/Theme.BeFubol"`.
+- En `themes.xml`, `Theme.BeFubol` hereda de `@android:style/Theme.DeviceDefault.NoActionBar`.
+  *¿Por qué?* Esto oculta por completo la barra de título nativa del sistema Android (ActionBar).
+  De esta forma, se elimina el problema de tener un encabezado duplicado y se deja todo el control
+  del diseño a la `TopAppBar` de Jetpack Compose en la parte superior.
+================================================================================
